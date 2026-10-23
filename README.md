@@ -1,3 +1,5 @@
+> **WillsitoGG experimental 9.4 (branch `release/9.4`; not yet in `develop`):** Based on official Switch 9.3.1-nx1. The reproducible CI patch `.github/soh-94/restore_923_controller.py` changes only the `padConfigureInput` call to its proven 9.2.3-nx5 source form. No other gameplay source is changed. This test targets controller confirmation on startup and crashes after closing/reopening on firmware 23.0.1, but it has **not been hardware-verified**. [Release 9.4](https://github.com/WillsitoGG/Shipwright-Switch/releases/tag/9.4).
+
 ![Ship of Harkinian](docs/shiptitle.darkmode.png#gh-dark-mode-only)
 ![Ship of Harkinian](docs/shiptitle.lightmode.png#gh-light-mode-only)
 
