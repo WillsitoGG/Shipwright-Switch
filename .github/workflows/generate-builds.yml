@@ -198,6 +198,11 @@ jobs:
       uses: actions/checkout@v7
       with:
         submodules: true
+    - name: Configure one controller player (preserve original styles)
+      run: |
+        python3 .github/soh-934/single_player_preserve_styles.py --test
+        python3 .github/soh-934/single_player_preserve_styles.py --check
+        python3 .github/soh-934/single_player_preserve_styles.py
     - name: Configure ccache
       uses: hendrikmuhs/ccache-action@v1.2.23
       with:
@@ -316,3 +321,50 @@ jobs:
       with:
         key: ${{ steps.restore-cache-vcpkg.outputs.cache-primary-key }}
         path: vcpkg
+
+  publish-switch-9-3-4:
+    name: Publish experimental 9.3.4 when Switch builds succeed
+    if: ${{ github.ref == 'refs/heads/release/9.3.4' }}
+    needs: [build-switch]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout 9.3.4 release notes
+      uses: actions/checkout@v7
+    - name: Download Switch standard build
+      uses: actions/download-artifact@v4
+      with:
+        name: soh-nx
+        path: dist
+    - name: Verify current release commit
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        current_sha="$(git ls-remote origin refs/heads/release/9.3.4 | cut -f1)"
+        test "$current_sha" = "$GITHUB_SHA" || { echo "Outdated 9.3.4 run: refusing to publish"; exit 1; }
+    - name: Package Switch binary
+      run: |
+        test -s dist/soh.nro
+        test -s dist/soh.o2r
+        test -s dist/readme.txt
+        (cd dist && zip -q ../soh-switch-9.3.4.zip soh.nro soh.o2r readme.txt)
+    - name: Publish version 9.3.4
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # An older run may still finish: ensure the current 9.3.4 binary wins.
+        if gh release view 9.3.4 >/dev/null 2>&1; then
+          gh release upload 9.3.4 soh-switch-9.3.4.zip --clobber
+          gh release edit 9.3.4 --title "9.3.4" --prerelease \
+            --notes-file .github/soh-934/RELEASE_NOTES.md
+        else
+          gh release create 9.3.4 soh-switch-9.3.4.zip \
+            --target "$GITHUB_SHA" \
+            --title "9.3.4" \
+            --prerelease \
+            --notes-file .github/soh-934/RELEASE_NOTES.md
+        fi
+        # The release tag must always identify the actually shipped source.
+        git tag -f 9.3.4 "$GITHUB_SHA"
+        git push --force origin refs/tags/9.3.4
