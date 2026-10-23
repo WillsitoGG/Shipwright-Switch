@@ -200,9 +200,9 @@ jobs:
         submodules: true
     - name: Test and apply Switch stability patches
       run: |
-        python3 .github/soh-932/apply_fixes.py --test
-        python3 .github/soh-932/apply_fixes.py --check
-        python3 .github/soh-932/apply_fixes.py
+        python3 .github/soh-933/apply_fixes.py --test
+        python3 .github/soh-933/apply_fixes.py --check
+        python3 .github/soh-933/apply_fixes.py
     - name: Configure ccache
       uses: hendrikmuhs/ccache-action@v1.2.23
       with:
@@ -323,8 +323,8 @@ jobs:
         path: vcpkg
 
   publish-switch-9-3-2:
-    name: Publish experimental 9.3.2 only after successful Switch builds
-    if: ${{ github.ref == 'refs/heads/release/9.3.2' }}
+    name: Publish experimental 9.3.3 only after successful Switch builds
+    if: ${{ github.ref == 'refs/heads/release/9.3.3' }}
     needs: [build-switch]
     runs-on: ubuntu-latest
     permissions:
@@ -342,17 +342,17 @@ jobs:
         test -s dist/soh.nro
         test -s dist/soh.o2r
         test -s dist/readme.txt
-        (cd dist && zip -q ../soh-switch-9.3.2.zip soh.nro soh.o2r readme.txt)
-    - name: Create release 9.3.2
+        (cd dist && zip -q ../soh-switch-9.3.3.zip soh.nro soh.o2r readme.txt)
+    - name: Create release 9.3.3
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        if gh release view 9.3.2 >/dev/null 2>&1; then
-          echo "Release 9.3.2 already exists; not overwriting."
+        if gh release view 9.3.3 >/dev/null 2>&1; then
+          echo "Release 9.3.3 already exists; not overwriting."
           exit 0
         fi
-        gh release create 9.3.2 soh-switch-9.3.2.zip \
+        gh release create 9.3.3 soh-switch-9.3.3.zip \
           --target "$GITHUB_SHA" \
-          --title "9.3.2" \
+          --title "9.3.3" \
           --prerelease \
-          --notes-file .github/soh-932/RELEASE_NOTES.md
+          --notes-file .github/soh-933/RELEASE_NOTES.md
