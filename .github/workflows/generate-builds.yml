@@ -198,6 +198,11 @@ jobs:
       uses: actions/checkout@v7
       with:
         submodules: true
+    - name: Test and apply Switch stability patches
+      run: |
+        python3 .github/soh-932/apply_fixes.py --test
+        python3 .github/soh-932/apply_fixes.py --check
+        python3 .github/soh-932/apply_fixes.py
     - name: Configure ccache
       uses: hendrikmuhs/ccache-action@v1.2.23
       with:
@@ -316,3 +321,38 @@ jobs:
       with:
         key: ${{ steps.restore-cache-vcpkg.outputs.cache-primary-key }}
         path: vcpkg
+
+  publish-switch-9-3-2:
+    name: Publish experimental 9.3.2 only after successful Switch builds
+    if: ${{ github.ref == 'refs/heads/release/9.3.2' }}
+    needs: [build-switch]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout release notes
+      uses: actions/checkout@v7
+    - name: Retrieve built normal Switch artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: soh-nx
+        path: dist
+    - name: Package tested-by-CI binary
+      run: |
+        test -s dist/soh.nro
+        test -s dist/soh.o2r
+        test -s dist/readme.txt
+        (cd dist && zip -q ../soh-switch-9.3.2.zip soh.nro soh.o2r readme.txt)
+    - name: Create release 9.3.2
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if gh release view 9.3.2 >/dev/null 2>&1; then
+          echo "Release 9.3.2 already exists; not overwriting."
+          exit 0
+        fi
+        gh release create 9.3.2 soh-switch-9.3.2.zip \
+          --target "$GITHUB_SHA" \
+          --title "9.3.2" \
+          --prerelease \
+          --notes-file .github/soh-932/RELEASE_NOTES.md
